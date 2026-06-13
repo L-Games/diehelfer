@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Die Helfer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;800&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0d1117; --surface: #161b22; --card: #1c2230;
+      --accent1: #ff6b35; --accent2: #00d4aa; --accent3: #a78bfa;
+      --text: #e6edf3; --muted: #8b949e; --radius: 18px;
+    }
+    body { font-family: 'Nunito', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+    body::before {
+      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(167,139,250,.18) 0%, transparent 70%),
+                  radial-gradient(ellipse 60% 40% at 80% 100%, rgba(0,212,170,.12) 0%, transparent 60%);
+    }
+    .wrapper { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 0 16px 60px; }
+
+    header { display: flex; align-items: center; gap: 14px; padding: 28px 0 20px; animation: fadeDown .6s ease both; }
+    .logo-icon {
+      width: 52px; height: 52px; border-radius: 14px; flex-shrink: 0; font-size: 26px;
+      background: linear-gradient(135deg, var(--accent1), var(--accent3));
+      display: flex; align-items: center; justify-content: center;
+      animation: pulse 3s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%,100% { box-shadow: 0 0 24px rgba(255,107,53,.4); }
+      50%      { box-shadow: 0 0 40px rgba(255,107,53,.7); }
+    }
+    header h1 {
+      font-family: 'Baloo 2', cursive; font-size: 2rem; font-weight: 800; line-height: 1.1;
+      background: linear-gradient(90deg, var(--accent1), var(--accent3), var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    header p { font-size: .8rem; color: var(--muted); margin-top: 2px; }
+
+    .search-section {
+      background: var(--surface); border: 1.5px solid rgba(167,139,250,.2);
+      border-radius: var(--radius); padding: 20px; margin-bottom: 22px;
+      animation: fadeUp .6s .1s ease both;
+    }
+    .search-row { display: flex; gap: 10px; }
+    #searchInput {
+      flex: 1; background: var(--card); border: 1.5px solid rgba(255,255,255,.1);
+      border-radius: 12px; padding: 14px 18px; font-family: 'Nunito', sans-serif;
+      font-size: 1rem; color: var(--text); outline: none; transition: border-color .25s, box-shadow .25s;
+    }
+    #searchInput::placeholder { color: var(--muted); }
+    #searchInput:focus { border-color: var(--accent3); box-shadow: 0 0 0 3px rgba(167,139,250,.2); }
+    .engine-select {
+      background: var(--card); border: 1.5px solid rgba(255,255,255,.1); border-radius: 12px;
+      padding: 14px 12px; font-family: 'Nunito', sans-serif; font-size: .9rem; color: var(--text); cursor: pointer; outline: none;
+    }
+    .search-btn {
+      background: linear-gradient(135deg, var(--accent1), var(--accent3));
+      color: #fff; border: none; border-radius: 12px; padding: 14px 22px;
+      font-family: 'Baloo 2', cursive; font-size: 1rem; font-weight: 600;
+      cursor: pointer; white-space: nowrap; transition: transform .15s, box-shadow .2s;
+    }
+    .search-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255,107,53,.4); }
+
+    .quick-label { font-size: .75rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin: 14px 0 8px; }
+    .quick-links { display: flex; flex-wrap: wrap; gap: 8px; }
+    .quick-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--card); border: 1px solid rgba(255,255,255,.08); border-radius: 30px;
+      padding: 6px 14px; font-size: .85rem; color: var(--text); text-decoration: none; cursor: pointer;
+      transition: background .2s, border-color .2s, transform .15s;
+    }
+    .quick-chip:hover { background: rgba(167,139,250,.2); border-color: var(--accent3); transform: translateY(-2px); }
+    .quick-chip.special { background: rgba(0,212,170,.1); border-color: rgba(0,212,170,.4); color: var(--accent2); }
+    .quick-chip.special:hover { background: rgba(0,212,170,.25); border-color: var(--accent2); }
+
+    /* ── Result Panel (replaces iframe) ── */
+    .result-panel {
+      display: none; background: var(--surface); border: 1.5px solid rgba(0,212,170,.25);
+      border-radius: var(--radius); overflow: hidden; margin-bottom: 22px;
+      animation: fadeUp .4s ease both;
+    }
+    .result-panel.visible { display: block; }
+
+    .panel-bar {
+      display: flex; align-items: center; gap: 10px; padding: 11px 16px;
+      background: var(--card); border-bottom: 1px solid rgba(255,255,255,.07);
+    }
+    .b-dots span {
+      display: inline-block; width: 11px; height: 11px; border-radius: 50%; margin-right: 3px;
+    }
+    .b-dots span:nth-child(1){background:#ff5f57;} .b-dots span:nth-child(2){background:#febc2e;} .b-dots span:nth-child(3){background:#28c840;}
+    .panel-url {
+      flex: 1; background: var(--bg); border: 1px solid rgba(255,255,255,.08); border-radius: 8px;
+      padding: 5px 12px; font-size: .78rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .panel-close {
+      background: none; border: none; color: var(--muted); font-size: 1.1rem; cursor: pointer;
+      padding: 4px 8px; border-radius: 6px; transition: color .2s;
+    }
+    .panel-close:hover { color: var(--accent1); }
+
+    /* The big open button card */
+    .open-card {
+      padding: 40px 24px; text-align: center;
+    }
+    .open-card .site-icon { font-size: 3.5rem; margin-bottom: 14px; display: block; }
+    .open-card h2 { font-family: 'Baloo 2', cursive; font-size: 1.4rem; margin-bottom: 8px; }
+    .open-card p { font-size: .9rem; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
+    .open-card .url-preview {
+      display: inline-block; background: var(--card); border: 1px solid rgba(255,255,255,.1);
+      border-radius: 8px; padding: 6px 14px; font-size: .8rem; color: var(--accent2);
+      margin-bottom: 24px; word-break: break-all; max-width: 100%;
+    }
+    .btn-go {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: linear-gradient(135deg, var(--accent1), var(--accent3));
+      color: #fff; text-decoration: none; border-radius: 14px; padding: 16px 36px;
+      font-family: 'Baloo 2', cursive; font-size: 1.1rem; font-weight: 700;
+      transition: transform .15s, box-shadow .2s; box-shadow: 0 4px 20px rgba(255,107,53,.3);
+    }
+    .btn-go:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(255,107,53,.5); }
+    .btn-go .arrow { font-size: 1.3rem; }
+    .btn-go.basys-btn {
+      background: linear-gradient(135deg, var(--accent2), var(--accent3));
+      box-shadow: 0 4px 20px rgba(0,212,170,.3);
+    }
+    .btn-go.basys-btn:hover { box-shadow: 0 8px 28px rgba(0,212,170,.5); }
+
+    /* Category cards */
+    .categories { display: grid; grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)); gap: 14px; animation: fadeUp .6s .2s ease both; }
+    .cat-card {
+      background: var(--surface); border: 1.5px solid rgba(255,255,255,.07);
+      border-radius: var(--radius); padding: 18px 16px; cursor: pointer;
+      transition: border-color .2s, transform .2s, box-shadow .2s;
+      position: relative; overflow: hidden;
+    }
+    .cat-card::before { content: ''; position: absolute; inset: 0; opacity: 0; transition: opacity .25s; }
+    .cat-card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,.2); box-shadow: 0 8px 28px rgba(0,0,0,.4); }
+    .cat-card:hover::before { opacity: 1; }
+    .cat-card.google::before  { background: linear-gradient(135deg,rgba(66,133,244,.15),transparent); }
+    .cat-card.youtube::before { background: linear-gradient(135deg,rgba(255,0,0,.15),transparent); }
+    .cat-card.wiki::before    { background: linear-gradient(135deg,rgba(255,255,255,.1),transparent); }
+    .cat-card.maps::before    { background: linear-gradient(135deg,rgba(52,211,153,.15),transparent); }
+    .cat-card.news::before    { background: linear-gradient(135deg,rgba(251,146,60,.15),transparent); }
+    .cat-card.translate::before { background: linear-gradient(135deg,rgba(167,139,250,.15),transparent); }
+    .cat-card.basys { border-color: rgba(0,212,170,.35); }
+    .cat-card.basys::before { background: linear-gradient(135deg,rgba(0,212,170,.2),transparent); }
+    .cat-card.basys:hover { border-color: var(--accent2); box-shadow: 0 8px 28px rgba(0,212,170,.25); }
+    .cat-emoji { font-size: 1.8rem; margin-bottom: 8px; }
+    .cat-name { font-family: 'Baloo 2', cursive; font-weight: 600; font-size: 1rem; margin-bottom: 4px; }
+    .cat-desc { font-size: .75rem; color: var(--muted); }
+    .cat-badge {
+      display: inline-block; background: rgba(0,212,170,.2); color: var(--accent2);
+      border-radius: 20px; font-size: .65rem; padding: 2px 8px; margin-top: 6px;
+      font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+    }
+
+    footer { text-align: center; margin-top: 40px; font-size: .78rem; color: var(--muted); }
+    footer span { color: var(--accent1); font-weight: 700; }
+
+    @keyframes fadeDown { from{opacity:0;transform:translateY(-20px);} to{opacity:1;transform:translateY(0);} }
+    @keyframes fadeUp   { from{opacity:0;transform:translateY(20px);}  to{opacity:1;transform:translateY(0);} }
+
+    @media (max-width:520px) {
+      header h1 { font-size: 1.5rem; }
+      .search-row { flex-wrap: wrap; }
+      .engine-select, .search-btn { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+
+  <header>
+    <div class="logo-icon">🤝</div>
+    <div>
+      <h1>Die Helfer</h1>
+      <p>Dein persönlicher Browser-Assistent</p>
+    </div>
+  </header>
+
+  <!-- Search -->
+  <div class="search-section">
+    <div class="search-row">
+      <input type="text" id="searchInput" placeholder="Was suchst du? Tippe hier ein…" autofocus />
+      <select class="engine-select" id="engineSelect">
+        <option value="google">🔍 Google</option>
+        <option value="bing">🌐 Bing</option>
+        <option value="duckduckgo">🦆 DuckDuckGo</option>
+        <option value="youtube">▶️ YouTube</option>
+        <option value="wiki">📖 Wikipedia</option>
+      </select>
+      <button class="search-btn" id="searchBtn">Suchen 🚀</button>
+    </div>
+    <div class="quick-label">Schnellzugriff</div>
+    <div class="quick-links">
+      <span class="quick-chip" onclick="showPanel('https://www.google.de','Google','🔍',false)">🔍 Google</span>
+      <span class="quick-chip" onclick="showPanel('https://www.youtube.com','YouTube','▶️',false)">▶️ YouTube</span>
+      <span class="quick-chip" onclick="showPanel('https://de.wikipedia.org','Wikipedia','📖',false)">📖 Wikipedia</span>
+      <span class="quick-chip" onclick="showPanel('https://www.bing.com','Bing','🌐',false)">🌐 Bing</span>
+      <span class="quick-chip" onclick="showPanel('https://maps.google.com','Google Maps','🗺️',false)">🗺️ Maps</span>
+      <span class="quick-chip" onclick="showPanel('https://translate.google.com','Übersetzer','🌍',false)">🌍 Übersetzer</span>
+      <span class="quick-chip special" onclick="showPanel('https://marketplace.basysanalytics.com/','Basys Analytics','🎲',true)">🎲 Basys Analytics</span>
+    </div>
+  </div>
+
+  <!-- Result Panel — always shows open button, no iframe -->
+  <div class="result-panel" id="resultPanel">
+    <div class="panel-bar">
+      <div class="b-dots"><span></span><span></span><span></span></div>
+      <div class="panel-url" id="panelUrl">—</div>
+      <button class="panel-close" onclick="closePanel()">✕</button>
+    </div>
+    <div class="open-card">
+      <span class="site-icon" id="siteIcon">🌐</span>
+      <h2 id="siteName">Seite öffnen</h2>
+      <p id="siteDesc">Tippe auf den Button um die Seite zu öffnen.</p>
+      <div class="url-preview" id="siteUrlPreview"></div><br>
+      <a class="btn-go" id="siteOpenBtn" href="#" target="_blank" rel="noopener noreferrer">
+        <span class="arrow">🚀</span> Jetzt öffnen
+      </a>
+    </div>
+  </div>
+
+  <!-- Category Cards -->
+  <div class="categories">
+    <div class="cat-card google" onclick="showPanel('https://www.google.de','Google','🔍',false)">
+      <div class="cat-emoji">🔍</div>
+      <div class="cat-name">Google</div>
+      <div class="cat-desc">Die weltgrößte Suchmaschine</div>
+    </div>
+    <div class="cat-card youtube" onclick="showPanel('https://www.youtube.com','YouTube','▶️',false)">
+      <div class="cat-emoji">▶️</div>
+      <div class="cat-name">YouTube</div>
+      <div class="cat-desc">Videos entdecken &amp; ansehen</div>
+    </div>
+    <div class="cat-card wiki" onclick="showPanel('https://de.wikipedia.org','Wikipedia','📖',false)">
+      <div class="cat-emoji">📖</div>
+      <div class="cat-name">Wikipedia</div>
+      <div class="cat-desc">Freies Wissen für alle</div>
+    </div>
+    <div class="cat-card maps" onclick="showPanel('https://maps.google.com','Google Maps','🗺️',false)">
+      <div class="cat-emoji">🗺️</div>
+      <div class="cat-name">Google Maps</div>
+      <div class="cat-desc">Orte finden &amp; navigieren</div>
+    </div>
+    <div class="cat-card news" onclick="showPanel('https://www.spiegel.de','Spiegel Nachrichten','📰',false)">
+      <div class="cat-emoji">📰</div>
+      <div class="cat-name">Nachrichten</div>
+      <div class="cat-desc">Aktuelles vom Spiegel</div>
+    </div>
+    <div class="cat-card translate" onclick="showPanel('https://translate.google.com','Google Übersetzer','🌍',false)">
+      <div class="cat-emoji">🌍</div>
+      <div class="cat-name">Übersetzer</div>
+      <div class="cat-desc">Sprachen übersetzen</div>
+    </div>
+    <div class="cat-card basys" onclick="showPanel('https://marketplace.basysanalytics.com/','Basys Analytics','🎲',true)">
+      <div class="cat-emoji">🎲</div>
+      <div class="cat-name">Basys Analytics</div>
+      <div class="cat-desc">Marketplace öffnen</div>
+      <div class="cat-badge">✨ NEU</div>
+    </div>
+  </div>
+
+  <footer>Gemacht mit ❤️ · <span>Die Helfer</span> · Dein Browser-Freund</footer>
+</div>
+
+<script>
+  const engines = {
+    google:     q => `https://www.google.com/search?q=${encodeURIComponent(q)}`,
+    bing:       q => `https://www.bing.com/search?q=${encodeURIComponent(q)}`,
+    duckduckgo: q => `https://duckduckgo.com/?q=${encodeURIComponent(q)}`,
+    youtube:    q => `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`,
+    wiki:       q => `https://de.wikipedia.org/w/index.php?search=${encodeURIComponent(q)}`,
+  };
+
+  const descriptions = {
+    false: 'Diese Seite öffnet sich in einem neuen Tab. Tippe auf den Button!',
+    true:  'Basys Analytics Marketplace öffnet sich in einem neuen Tab. Viel Spaß! 🎲',
+  };
+
+  function showPanel(url, name, icon, isBasys) {
+    document.getElementById('panelUrl').textContent       = url;
+    document.getElementById('siteIcon').textContent       = icon;
+    document.getElementById('siteName').textContent       = name;
+    document.getElementById('siteDesc').textContent       = descriptions[isBasys];
+    document.getElementById('siteUrlPreview').textContent = url;
+    const btn = document.getElementById('siteOpenBtn');
+    btn.href = url;
+    btn.className = 'btn-go' + (isBasys ? ' basys-btn' : '');
+    btn.innerHTML = `<span class="arrow">${isBasys ? '🎲' : '🚀'}</span> ${name} öffnen`;
+
+    const panel = document.getElementById('resultPanel');
+    panel.classList.add('visible');
+    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function closePanel() {
+    document.getElementById('resultPanel').classList.remove('visible');
+  }
+
+  document.getElementById('searchBtn').addEventListener('click', () => {
+    const q = document.getElementById('searchInput').value.trim();
+    if (!q) { document.getElementById('searchInput').focus(); return; }
+    const engine = document.getElementById('engineSelect').value;
+    const url = engines[engine](q);
+    const icons = { google:'🔍', bing:'🌐', duckduckgo:'🦆', youtube:'▶️', wiki:'📖' };
+    const names = { google:'Google', bing:'Bing', duckduckgo:'DuckDuckGo', youtube:'YouTube', wiki:'Wikipedia' };
+    showPanel(url, names[engine] + ' Suche: ' + q, icons[engine], false);
+  });
+
+  document.getElementById('searchInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('searchBtn').click();
+  });
+</script>
+</body>
+</html>
